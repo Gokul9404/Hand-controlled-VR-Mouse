@@ -1,5 +1,5 @@
 #===== Importing Required Modules ==========================================
-import autopy
+from pyautogui import click, moveTo, size
 import cv2
 import mediapipe as mp
 
@@ -229,36 +229,23 @@ def main():
             swipe = check_swipe_motion(finger_pos_for_swipe)
         return state, swipe
     #===========================================================================
-    def mouse_pointer_click(centre, dis, Clicked, state):
+    def mouse_pointer_click(centre, dis, Clicked):
         """Clicks the Pointer at it's place when Index & Middle Fingers are too close to each-other. \n
         Returns Clicked & state values."""
         cx,cy = centre
-        cv2.circle(Main_img,(cx,cy),15,(181,181,181),cv2.FILLED)
+        Mouse_state = 0
+        cv2.circle(Main_img,(cx,cy),15,(181,181,181),cv2.FILLED)   
+        if Clicked >= 1: Clicked = 0
+
         if dis < 40:
             cv2.circle(Main_img,(cx,cy),15,(0,252,51),cv2.FILLED)
             if Clicked==0:
-                state = state + ' Clicked'
-                Clicked = 1
+                Mouse_state = Clicked = 1
         elif dis > 55:
-            if Clicked >= 1: Clicked = 0
-            state = state + ' Clickable'
+            Mouse_state = 0
         if Clicked == 1:
             Clicked += 1
-            autopy.mouse.click()
-        return Clicked, state
-    #===========================================================================
-    #===========================================================================
-    say('Getting Camera')
-    cap = cv2.VideoCapture(0)           # Creating Camera object
-    cam_width,cam_height = 960,720      # And setiing up it's
-    cap.set(3,cam_width)                # Width and Height
-    cap.set(4,cam_height)               # According to ourself
-    # print('Camera-connected')
-    say('Camera connected')
-    #===========================================================================
-    start_x, start_y, end_x, end_y = 200, 60, 500, 230
-    mid_x = (start_x + end_x)//2
-    scrn_width, scrn_height = autopy.screen.size()
+        return Clicked, Mouse_state, Clicked
     #===========================================================================
     Hand_detector = Handdetector()      # Creating hand-Detector 
     #===========================================================================
@@ -267,6 +254,8 @@ def main():
     volume = cast(interface, POINTER(IAudioEndpointVolume))
     vol_range = volume.GetVolumeRange()
     volume_prcnt = 30
+    #===========================================================================
+    pointer_x, pointer_y = 0, 0
     #===========================================================================
     Thumb = Index_Finger = Middle_Finger = Ring_Finger = Pinky_Finger = 1
     sum_of_finger_state = 0
@@ -279,13 +268,25 @@ def main():
     Music_state = 'Pause'
     check_music_state_if_paused = False
     #===========================================================================
-    music_file_loc = 'E:\\Assets & Extras\\New fold\\Twin Musicom - Seven Lives to Live.mp3'
-    mixer.music.load(music_file_loc)
+    # music_file_loc = 'E:\\Assets & Extras\\New fold\\Twin Musicom - Seven Lives to Live.mp3'
+    # mixer.music.load(music_file_loc)
     #===========================================================================
     finger_pos_for_swipe = []
     countdown = 0
     #===========================================================================
     path_to_vscode = "C:\\Users\\gokul\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"
+    #===========================================================================
+    start_x, start_y, end_x, end_y = 200, 60, 500, 230
+    mid_x = (start_x + end_x)//2
+    scrn_width, scrn_height = size()
+    #===========================================================================
+    say('Getting Camera')
+    cap = cv2.VideoCapture(0)           # Creating Camera object
+    cam_width,cam_height = 960,720      # And setiing up it's
+    cap.set(3,cam_width)                # Width and Height
+    cap.set(4,cam_height)               # According to ourself
+    # print('Camera-connected')
+    say('Camera connected')
     #===========================================================================
     while True:
         _ , cap_img = cap.read()
@@ -309,34 +310,36 @@ def main():
                 Index_finger_in = check_in_fing(lm_list[8][1:])
                 Thumb_in = check_in_fing(lm_list[4][1:])
                 Middle_finger_in = check_in_fing(lm_list[12][1:])
-                #Ring_Finger_in = check_in_fing(lm_list[16][1:])
-                #==== Mouse Pointer Movement ====================================
-                if sum_of_finger_state == 1 and Index_Finger == 1:
-                    state = 'Pointer'
-                    px, py = lm_list[8][1:]
+                # Ring_Finger_in = check_in_fing(lm_list[16][1:])
+                #===================================================================
+                #== Get Cursor Co-ordinates ====================================
+                if (sum_of_finger_state == 1 and Index_Finger == 1):
+                    px, py = lm_list[8][1:]                        
+                    pointer_x = int(interp(px,(start_x,end_x),(0,scrn_width)))
+                    pointer_y = int(interp(py,(start_y,end_y),(0,scrn_height)))
+                    #==== Mouse Pointer Movement ===============================
+                    state = "Mouse Pointer"
                     cv2.circle(Main_img,(px,py),5,(200,200,200),cv2.FILLED)
                     cv2.circle(Main_img,(px,py),10,(200,200,200),3)
                     if Index_finger_in:
-                        pointer_x = interp(px,(start_x,end_x),(0,scrn_width))
-                        pointer_y = interp(py,(start_y,end_y),(0,scrn_height))
-                        autopy.mouse.move(int(pointer_x),int(pointer_y))
-                #==== Swipe Gesture & Mouse Control ============================
+                        moveTo(int(pointer_x),int(pointer_y))
+                #== Check Clicked or Not =======================================
                 elif sum_of_finger_state == 2 and (Index_Finger == Middle_Finger == 1):
-                    #==== Swipe Gesture =========================================
-                    if Thumb:
-                        cv2.line(Main_img,(mid_x,start_y),(mid_x,end_y),(222,222,222),2)
-                        cv2.putText(Main_img,'Quit',(250,80),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
-                        cv2.putText(Main_img,f'{Music_state_to_do} Music',(195,210),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
-                        cv2.putText(Main_img,'Open Google',(370,80),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
-                        cv2.putText(Main_img,'Open Vscode',(355,210),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
-                        if (Index_finger_in and Middle_finger_in):
-                            state, swipe = Get_state_swipe(swipe)
-                    #==== Mouse Click ===========================================
-                    else:
-                        [dis , centre ]= Hand_detector.findDistance(Main_img,1,2)
-                        state = 'Click Pointer'
-                        if centre and (Index_finger_in and Middle_finger_in) and dis:
-                            Clicked, state = mouse_pointer_click(centre,dis,Clicked,state) 
+                    [dis , centre ]= Hand_detector.findDistance(Main_img,1,2)
+                    if centre and (Index_finger_in and Middle_finger_in) and dis:
+                        Clicked, Mouse_clicked, Clicked = mouse_pointer_click(centre,dis,Clicked)
+                        #==== Mouse Click ===========================================
+                        state = 'Mouse Pointer Clicked' if Mouse_clicked else 'Mouse Pointer Clickable'
+                        if Clicked == 2: click(pointer_x,pointer_y)
+                #==== Swipe Gesture & Mouse Control ============================
+                if sum_of_finger_state == 3 and (Index_Finger == Middle_Finger == Ring_Finger == 1):
+                    cv2.line(Main_img,(mid_x,start_y),(mid_x,end_y),(222,222,222),2)
+                    cv2.putText(Main_img,'Quit',(250,80),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
+                    cv2.putText(Main_img,f'{Music_state_to_do} Music',(195,210),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
+                    cv2.putText(Main_img,'Open Google',(370,80),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
+                    cv2.putText(Main_img,'Open Vscode',(355,210),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
+                    if (Index_finger_in and Middle_finger_in):
+                        state, swipe = Get_state_swipe(swipe)
                 #==== Volume Changing by Thumb and Index finger =================
                 elif sum_of_finger_state == 2 and (Index_Finger == Pinky_Finger == 1) and (Ring_Finger == Middle_Finger == 0):
                     state = 'Volume Change'
@@ -352,7 +355,7 @@ def main():
                 elif swipe == 'neg':
                     countdown = 5
                     Music_state_to_do, Music_state = Music_state, Music_state_to_do
-                    check_music_state_if_paused = change_music_state(Music_state,check_music_state_if_paused)
+                    # check_music_state_if_paused = change_music_state(Music_state,check_music_state_if_paused)
             elif state == 'To-do':
                 #=== To-do Task 1  ==============================================
                 if swipe == 'pos':
@@ -371,7 +374,7 @@ def main():
                     say('opening Vs code')
                     startfile(path_to_vscode)
         #======= Finger Pos list check for non-swipe work =======================
-        if state not in ['Quit','To-do','Swipe'] or (countdown>0): 
+        if (state not in ['Quit','To-do','Swipe']) or (countdown>0): 
             finger_pos_for_swipe = []
             if countdown>0: countdown -= 1
         #======= Displaying the FPS of the CV Apk ===============================
