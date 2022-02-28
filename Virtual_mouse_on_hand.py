@@ -1,5 +1,5 @@
 #===== Importing Required Modules ==========================================
-from pyautogui import click, moveTo, size
+from pyautogui import click, moveTo, size, hscroll
 import cv2
 import mediapipe as mp
 
@@ -24,7 +24,7 @@ from pygame import mixer
 mixer.init()
 #================================================================================
 class Handdetector:
-    def __init__(self,mode=False,max_hands=1,detection_con=0.7,track_confidence=0.5):
+    def __init__(self,mode=False,max_hands=1,detection_con=0.7,track_confidence=0.6):
         """Used to detect the Hand position, it's Finger-Up state ,and \n To draw the Landmarks of the hand """
         self.mode = mode
         self.max_hands = max_hands
@@ -187,10 +187,16 @@ def main():
             return False
         elif box==1:
             if start_x < point_list[0] < mid_x and start_y < point_list[1] < end_y:
-                return '1'
+                return 1
             elif mid_x < point_list[0] < end_x and start_y < point_list[1] < end_y:
-                return '2'
-            return '0'
+                return 2
+        elif box == 2:
+            if end_x - 130 < point_list[0] < end_x - 10:
+                if start_y + 5  < point_list[1] < (start_y + (end_y - start_y)/2) - 5:
+                    return 1
+                elif start_y + 5 + (end_y - start_y)/2  < point_list[1] < end_y - 5:
+                    return 2
+        return 0
     #===========================================================================
     def check_swipe_motion(finger_list=[]):
         """Returns the swipe done by the Hand-detected either in +ve direction['pos'] or -ve direction['neg']"""
@@ -208,10 +214,6 @@ def main():
             if x < 30 and y > 100:
                 if y2 > y1 : swipe = 'pos'
                 else: swipe = 'neg'
-            #===========================
-            # if x > 100 and y < 30:
-            #     if x2 > x1 : swipe = 'right'
-            #     else: swipe = 'left'
             return swipe
     #===========================================================================
     def Get_state_swipe(swipe):
@@ -219,7 +221,7 @@ def main():
         F1_box = check_in_fing(lm_list[8][1:],1)
         F2_box = check_in_fing(lm_list[12][1:],1)
         if F1_box == F2_box:
-            state = 'Quit' if F1_box == '1' else 'To-do'
+            state = 'Quit' if F1_box == 1 else  'To-do'
         else:
             state = 'Swipe'
         finger_pos_for_swipe.append(lm_list[12][1:])
@@ -236,7 +238,6 @@ def main():
         Mouse_state = 0
         cv2.circle(Main_img,(cx,cy),15,(181,181,181),cv2.FILLED)   
         if Clicked >= 1: Clicked = 0
-
         if dis < 40:
             cv2.circle(Main_img,(cx,cy),15,(0,252,51),cv2.FILLED)
             if Clicked==0:
@@ -247,6 +248,7 @@ def main():
             Clicked += 1
         return Clicked, Mouse_state, Clicked
     #===========================================================================
+    say('Getting Hand dectector module')
     Hand_detector = Handdetector()      # Creating hand-Detector 
     #===========================================================================
     devices = AudioUtilities.GetSpeakers()
@@ -256,6 +258,9 @@ def main():
     volume_prcnt = 30
     #===========================================================================
     pointer_x, pointer_y = 0, 0
+    #===========================================================================
+    change_scroll_count = 0
+    scroll_dir = 0
     #===========================================================================
     Thumb = Index_Finger = Middle_Finger = Ring_Finger = Pinky_Finger = 1
     sum_of_finger_state = 0
@@ -268,7 +273,7 @@ def main():
     Music_state = 'Pause'
     check_music_state_if_paused = False
     #===========================================================================
-    # music_file_loc = 'E:\\Assets & Extras\\New fold\\Twin Musicom - Seven Lives to Live.mp3'
+    # music_file_loc = 'E:\\Assets & Extras\\New fold\\Twin Musicom - Seven Lives to Live.mp3' # change the path to your own music path
     # mixer.music.load(music_file_loc)
     #===========================================================================
     finger_pos_for_swipe = []
@@ -285,53 +290,76 @@ def main():
     cam_width,cam_height = 960,720      # And setiing up it's
     cap.set(3,cam_width)                # Width and Height
     cap.set(4,cam_height)               # According to ourself
-    # print('Camera-connected')
     say('Camera connected')
-    #===========================================================================
+    #==========================================================================
     while True:
         _ , cap_img = cap.read()
         cur_time = time.time()
         Main_img = cv2.flip(cap_img,1)
-        #========================================================================
+        #======================================================================
         swipe = 'None'
         state = 'None'
         Hand_Detection_check = False
         Main_img = Hand_detector.findhand(Main_img,True)
         lm_list = Hand_detector.findPosition()
-        #========================================================================
+        #======================================================================
         if lm_list:
             finger_up_state = Hand_detector.fingersUp()
             Hand_Detection_check = True
-            #=============== Checking & Changing finger's State =====================
+            scroll_dir = 0    
+            #=============== Checking & Changing finger's State ===============
             if finger_up_state:
                 [Thumb,Index_Finger,Middle_Finger,Ring_Finger,Pinky_Finger] = finger_up_state
                 sum_of_finger_state = sum(finger_up_state[1:])
-                #================================================================
+                #==============================================================
                 Index_finger_in = check_in_fing(lm_list[8][1:])
                 Thumb_in = check_in_fing(lm_list[4][1:])
                 Middle_finger_in = check_in_fing(lm_list[12][1:])
                 # Ring_Finger_in = check_in_fing(lm_list[16][1:])
-                #===================================================================
-                #== Get Cursor Co-ordinates ====================================
+                #==============================================================
+                #== Get Cursor Co-ordinates ===================================
                 if (sum_of_finger_state == 1 and Index_Finger == 1):
                     px, py = lm_list[8][1:]                        
                     pointer_x = int(interp(px,(start_x,end_x),(0,scrn_width)))
                     pointer_y = int(interp(py,(start_y,end_y),(0,scrn_height)))
-                    #==== Mouse Pointer Movement ===============================
+                    #==== Mouse Pointer Movement ==============================
                     state = "Mouse Pointer"
                     cv2.circle(Main_img,(px,py),5,(200,200,200),cv2.FILLED)
                     cv2.circle(Main_img,(px,py),10,(200,200,200),3)
                     if Index_finger_in:
                         moveTo(int(pointer_x),int(pointer_y))
-                #== Check Clicked or Not =======================================
+                #== Check Clicked or Not ======================================
                 elif sum_of_finger_state == 2 and (Index_Finger == Middle_Finger == 1):
                     [dis , centre ]= Hand_detector.findDistance(Main_img,1,2)
                     if centre and (Index_finger_in and Middle_finger_in) and dis:
                         Clicked, Mouse_clicked, Clicked = mouse_pointer_click(centre,dis,Clicked)
-                        #==== Mouse Click ===========================================
+                    #==========================================================
+                    line_y = start_y + (end_y - start_y)//2
+                    F1_box = check_in_fing(lm_list[8][1:],2)
+                    F2_box = check_in_fing(lm_list[12][1:],2)
+                    F1_F2_box = F1_box if (F1_box == F2_box) != 0 else 0
+                    if F1_F2_box and Clicked == 2: 
+                        change_scroll_count+=1
+                        if change_scroll_count==5: change_scroll_count = 0
+                    #==========================================================
+                    if Thumb:
+                        state = 'Scrool / Right Click'
+                        cv2.line(Main_img,(end_x-140,start_y),(end_x-140,end_y),(172,172,172),3)
+                        cv2.line(Main_img,(end_x,start_y),(end_x,end_y),(172,172,172),3)
+                        cv2.line(Main_img,(end_x-140,line_y),(end_x,line_y),(172,172,172),3)                    
+                        cv2.putText(Main_img,'Scroll Up',(375,start_y+20),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),1)
+                        cv2.putText(Main_img,'Scroll Downd',(365,end_y-20),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),1)
+                        if change_scroll_count==1:
+                            if F1_F2_box != 0:
+                                scroll_dir = 1 if F1_F2_box==1 else -1
+                                hscroll(20*scroll_dir)
+                            else: click(pointer_x,pointer_y,button='right')
+                    else:
+                        #==== Mouse Click =====================================
                         state = 'Mouse Pointer Clicked' if Mouse_clicked else 'Mouse Pointer Clickable'
                         if Clicked == 2: click(pointer_x,pointer_y)
-                #==== Swipe Gesture & Mouse Control ============================
+                    #==========================================================
+                #==== Swipe Gesture & Mouse Control ===========================
                 if sum_of_finger_state == 3 and (Index_Finger == Middle_Finger == Ring_Finger == 1):
                     cv2.line(Main_img,(mid_x,start_y),(mid_x,end_y),(222,222,222),2)
                     cv2.putText(Main_img,'Quit',(250,80),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
@@ -340,7 +368,7 @@ def main():
                     cv2.putText(Main_img,'Open Vscode',(355,210),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,155,238),2)
                     if (Index_finger_in and Middle_finger_in):
                         state, swipe = Get_state_swipe(swipe)
-                #==== Volume Changing by Thumb and Index finger =================
+                #==== Volume Changing by Thumb and Index finger ===============
                 elif sum_of_finger_state == 2 and (Index_Finger == Pinky_Finger == 1) and (Ring_Finger == Middle_Finger == 0):
                     state = 'Volume Change'
                     cv2.putText(Main_img,f'Vol.:-{volume_prcnt}',(50,200),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(165,255,214),2)
@@ -367,7 +395,7 @@ def main():
                     else:
                         notification.notify(title='Connection Falied',message='Internet Connection is unstable or not connected', timeout=5)
                         say('Connection failed')
-                        say('unable to connect gogle')
+                        say('unable to connect google')
                 #=== To-do Task 1  ==============================================
                 elif swipe == 'neg':
                     countdown = 5
@@ -391,11 +419,10 @@ def main():
         if cv2.waitKey(10) == ord("q"): Quit_confirm = True
         #======= Quiting the apk ================================================
         if Quit_confirm:
-            if Music_state == 'Play': 
-                change_music_state('Pause',sys_say=False)
+            if Music_state == 'Play': change_music_state('Pause',sys_say=False)
             say('Quitting')
-            sleep(2)
+            sleep(1)
             break
-
+#==============================================================================
 if __name__== '__main__':
     main()
