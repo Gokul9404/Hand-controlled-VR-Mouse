@@ -26,13 +26,8 @@ mixer.init()
 class Handdetector:
     def __init__(self,mode=False,max_hands=1,detection_con=0.7,track_confidence=0.6):
         """Used to detect the Hand position, it's Finger-Up state ,and \n To draw the Landmarks of the hand """
-        self.mode = mode
-        self.max_hands = max_hands
-        self.detection_con = detection_con
-        self.track_confidence = track_confidence
-        
         self.mpHands = mp.solutions.hands
-        self.hands = self.mpHands.Hands(self.mode ,self.max_hands,self.detection_con,self.track_confidence)
+        self.hands = self.mpHands.Hands(mode,max_hands,1,detection_con,track_confidence)
         self.mpdraw = mp.solutions.drawing_utils
         
         self.fingerup_list, self.lm_list = [], []

@@ -19,8 +19,12 @@ funtionality of Mouse (e.g. Moving of Pointer), with some Other funtions too.
 - Opens Google and a given Application of your device via swipe
 - Added voice to some function working
 
+***Ver-2***
+- Changed Library for Mouse Movements, Click
+- Added Scroll Movement UP/DOWN
+- Added Right Click 
 
 ### Version Info
 First Version *(1.0)* - Date 25/06/2021
 
-Current Version - *1.8*
+Current Version - *2*
