@@ -7,8 +7,7 @@ from win32com.client import Dispatch
 
 from math import hypot
 from numpy import interp
-from time import sleep
-import time
+from time import sleep, time
 
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
@@ -289,7 +288,7 @@ def main():
     #==========================================================================
     while True:
         _ , cap_img = cap.read()
-        cur_time = time.time()
+        cur_time = time()
         Main_img = cv2.flip(cap_img,1)
         #======================================================================
         swipe = 'None'
