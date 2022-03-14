@@ -4,8 +4,7 @@
 
 ---
 
-## Dependencies  -
-
+## Project dependencies  -
 
 * ```openCV```-(For image processing and drawing)
 * ```mediapipe```-(For Hand Tracking)
@@ -17,7 +16,7 @@
 * ```plyer```-(To send error/working notifications)
 * ```pygame``` -(To Play music)
 
-> To install all the required dependencies/libraries use command below in the folder where the requirement.txt and other files are saved 
+> To install all the required dependencies/libraries use command below in the folder where the requirement.txt and other files are saved.
 
 ```bash
    pip install -r requirement.txt
