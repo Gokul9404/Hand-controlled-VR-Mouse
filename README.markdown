@@ -26,34 +26,26 @@
 
 ## Features of V.r. Mouse
 
-***Version - 1.0***
+***Version - 1***
 
 * Click of the Pointer
 * Moving Pointer
 * Volume change Control
 * Quitting
 
-***Version - 1.5***
+***Version 1 - 1***<sup>*st*</sup>***updated***
 
 * Playing Music via Swipe Gesture
 * Quitting via Swipe Gesture
 
-***Version - 1.8***
-
+***Version 1 - 2***<sup>*nd*</sup>***update***
 * Opens Google and a given Application of your device via swipe
 * Added voice to some function working
 
 ***Version - 2***
-
-* Changed Library for Mouse Movements, Click
-* Added Scroll Movement UP/DOWN
-* Added Right Click
-
-## Version Info
-
-First Version *(1.0)* - Date 25/06/2021
-
-Current Version - **2**
+* Updated Library for Mouse Movements, Click
+* Scroll Movement UP/DOWN
+* Right Click Functioanlity
 
 ---
 
