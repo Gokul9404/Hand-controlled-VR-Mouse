@@ -49,6 +49,10 @@
 
 ---
 
+## Working Demo
+![Hand_gesture](https://user-images.githubusercontent.com/71085729/199318288-feda272b-91ab-4afb-9d15-ac9b82507578.gif)
+
+---
 ## Installation
 
 To setup the system for development on your local machine, please follow the instructions below:
