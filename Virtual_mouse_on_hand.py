@@ -62,7 +62,7 @@ class Handdetector:
                     cx, cy = int(lm.x*w),int(lm.y*h)
                     lm_list.append([id,cx,cy])
         self.lm_list = lm_list
-        return lm_list
+        return self.lm_list
 
     def fingersUp(self):
         self.fingerup_list = []
@@ -114,7 +114,6 @@ class Handdetector:
                     distance, (cx, cy) = find()
                 else:
                     pass 
-                    #print("Keep finger up")
             else:
                 distance = find()
             return [distance , (cx, cy)]
@@ -265,7 +264,6 @@ def main():
     #===========================================================================
     Music_state_to_do = "Play"
     Music_state = 'Pause'
-    check_music_state_if_paused = False
     #===========================================================================
     # music_file_loc = 'E:\\Assets & Extras\\New fold\\Twin Musicom - Seven Lives to Live.mp3' # change the path to your own music path
     # mixer.music.load(music_file_loc)
@@ -282,8 +280,8 @@ def main():
     say('Getting Camera')
     cap = cv2.VideoCapture(0)           # Creating Camera object
     cam_width,cam_height = 960,720      # And setiing up it's
-    cap.set(3,cam_width)                # Width and Height
-    cap.set(4,cam_height)               # According to ourself
+    # cap.set(3,cam_width)                # Width and Height
+    # cap.set(4,cam_height)               # According to ourself
     say('Camera connected')
     #==========================================================================
     while True:
