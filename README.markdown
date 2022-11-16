@@ -1,6 +1,8 @@
 # Virtual Mouse using Hand Gestures
 
-> Developed an AI-based approach for controlling the mouse movement using Python and openCV with real-time camera that detects hand landmarks, tracks gesture patterns instead of a physical mouse.
+Virtual Mouse makes human computer interaction simple by making use of Hand Gestures. The computer requires almost no direct contact. All i/o operations can be virtually controlled by using static and dynamic hand gestures.
+
+Developed using Comuter-Vision based approach for controlling the mouse movement using Python and openCV with real-time camera that detects hand landmarks, tracks gesture patterns instead of a physical mouse.
 
 ---
 

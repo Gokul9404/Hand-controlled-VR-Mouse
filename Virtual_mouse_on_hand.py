@@ -23,8 +23,18 @@ from pygame import mixer
 mixer.init()
 #================================================================================
 class Handdetector:
-    def __init__(self,mode=False,max_hands=1,detection_con=0.7,track_confidence=0.6):
-        """Used to detect the Hand position, it's Finger-Up state ,and \n To draw the Landmarks of the hand """
+    def __init__(self,max_hands=1,detection_con=0.7,track_confidence=0.6):
+        """_summary_
+
+        Args:
+            max_hands (int):        Defaults to 1.
+                Represents the maximum no. of handes to detect in a frame at a time.
+            detection_con (float):  Defaults to 0.7.
+                Confidence in the detection of hande with-in the frame 
+            track_confidence (float):Defaults to 0.6.
+                Confidence of detecting the hand-movement between frame, i.e. Confidence to detecrmined the track change of hand.
+        """
+        mode = False
         self.mpHands = mp.solutions.hands
         self.hands = self.mpHands.Hands(mode,max_hands,1,detection_con,track_confidence)
         self.mpdraw = mp.solutions.drawing_utils
@@ -58,9 +68,9 @@ class Handdetector:
         if self.result.multi_hand_landmarks:    
             given_hand = self.result.multi_hand_landmarks[handno]
             for id, lm in enumerate(given_hand.landmark):
-                    h ,w , c = self.img.shape
-                    cx, cy = int(lm.x*w),int(lm.y*h)
-                    lm_list.append([id,cx,cy])
+                h ,w , _ = self.img.shape
+                cx, cy = int(lm.x*w),int(lm.y*h)
+                lm_list.append([id,cx,cy])
         self.lm_list = lm_list
         return self.lm_list
 
@@ -105,15 +115,10 @@ class Handdetector:
                 cv2.circle(img,(f2_x,f2_y),7,(0,53,102),cv2.FILLED)
             if draw_cntr:
                 cv2.circle(img,(cx,cy),8,(224,251,252),cv2.FILLED)
-
             dis = hypot(f2_x - f1_x,f2_y - f1_y)
             return dis, (cx, cy)
         if self.lm_list and self.fingerup_list:
-            if finger_up:
-                if (self.fingerup_list[F1] == self.fingerup_list[F2] == 1):
-                    distance, (cx, cy) = find()
-                else:
-                    pass 
+            if finger_up and ((self.fingerup_list[F1] == self.fingerup_list[F2] == 1)): distance, (cx, cy) = find()
             else:
                 distance = find()
             return [distance , (cx, cy)]
@@ -200,13 +205,12 @@ def main():
             [x2, y2] = finger_list[fing_len - 1]
             #===========================
             x = int(x2 - x1)
-            y = int(y2 -y1)
+            y = int(y2 - y1)
             if x1 > x2: x *= -1
             if y1 > y2: y *= -1
             #===========================
             if x < 30 and y > 100:
-                if y2 > y1 : swipe = 'pos'
-                else: swipe = 'neg'
+                swipe = 'pos' if (y2 > y1) else 'neg'
             return swipe
     #===========================================================================
     def Get_state_swipe(swipe):
@@ -310,7 +314,7 @@ def main():
                 # Ring_Finger_in = check_in_fing(lm_list[16][1:])
                 #==============================================================
                 #== Get Cursor Co-ordinates ===================================
-                if (sum_of_finger_state == 1 and Index_Finger == 1):
+                if (sum_of_finger_state == Index_Finger == 1):
                     px, py = lm_list[8][1:]                        
                     pointer_x = int(interp(px,(start_x,end_x),(0,scrn_width)))
                     pointer_y = int(interp(py,(start_y,end_y),(0,scrn_height)))
@@ -322,7 +326,7 @@ def main():
                         moveTo(int(pointer_x),int(pointer_y))
                 #== Check Clicked or Not ======================================
                 elif sum_of_finger_state == 2 and (Index_Finger == Middle_Finger == 1):
-                    [dis , centre ]= Hand_detector.findDistance(Main_img,1,2)
+                    [ dis , centre ]= Hand_detector.findDistance(Main_img,1,2)
                     if centre and (Index_finger_in and Middle_finger_in) and dis:
                         Clicked, Mouse_clicked, Clicked = mouse_pointer_click(centre,dis,Clicked)
                     #==========================================================
@@ -375,7 +379,6 @@ def main():
                 elif swipe == 'neg':
                     countdown = 5
                     Music_state_to_do, Music_state = Music_state, Music_state_to_do
-                    # check_music_state_if_paused = change_music_state(Music_state,check_music_state_if_paused)
             elif state == 'To-do':
                 #=== To-do Task 1  ==============================================
                 if swipe == 'pos':
