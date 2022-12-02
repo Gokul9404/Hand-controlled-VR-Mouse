@@ -39,7 +39,9 @@ class Handdetector:
         self.hands = self.mpHands.Hands(mode,max_hands,1,detection_con,track_confidence)
         self.mpdraw = mp.solutions.drawing_utils
         
-        self.fingerup_list, self.lm_list = [], []
+        self.lm_list = []
+        self.fingerup_list = np.array([])
+        
         self.tip_id = [4,8,12,16,20]
         self.close_tip_id = [5,6,10,14,18]
         self.hand_side = None
@@ -75,25 +77,29 @@ class Handdetector:
         return self.lm_list
 
     def fingersUp(self):
-        self.fingerup_list = []
-        if len(self.lm_list) != 0:
+        self.fingerup_list = np.array([])
+        if self.lm_list:
             #==== Checking whther left hand or right hand =======================
             #==== And then determining the Thumb state:- Open or Close ==========
             if self.lm_list[0][1] > self.lm_list[1][1]:
                 self.hand_side = 'right'
                 if self.lm_list[self.tip_id[0]][1] < self.lm_list[self.close_tip_id[0]][1]  :
-                    self.fingerup_list.append(1)
-                else: self.fingerup_list.append(0)
+                    self.fingerup_list = np.append(self.fingerup_list,[1])
+                else: 
+                    # self.fingerup_list.append(0)
+                    self.fingerup_list = np.append(self.fingerup_list,[0])
             else :
                 self.hand_side = 'left'
                 if self.lm_list[self.tip_id[0]][1] > self.lm_list[self.close_tip_id[0]][1]  :
-                    self.fingerup_list.append(1)
-                else: self.fingerup_list.append(0)
+                    self.fingerup_list = np.append(self.fingerup_list,[1])
+                else: 
+                    self.fingerup_list = np.append(self.fingerup_list,[0])
             #==== Checking the state of the Fingers:- Open or Close =============
             for id in range(1,5):
                 if self.lm_list[self.tip_id[id]][2] < self.lm_list[self.close_tip_id[id]][2]:
-                    self.fingerup_list.append(1)
-                else: self.fingerup_list.append(0)
+                    self.fingerup_list =  np.append(self.fingerup_list,[1])
+                else: 
+                    self.fingerup_list = np.append(self.fingerup_list,[0])
             #====================================================================
         return self.fingerup_list
     
@@ -117,7 +123,7 @@ class Handdetector:
                 cv2.circle(img,(cx,cy),8,(224,251,252),cv2.FILLED)
             dis = hypot(f2_x - f1_x,f2_y - f1_y)
             return dis, (cx, cy)
-        if self.lm_list and self.fingerup_list:
+        if self.lm_list and (self.fingerup_list.size != 0):
             if finger_up and ((self.fingerup_list[F1] == self.fingerup_list[F2] == 1)): distance, (cx, cy) = find()
             else:
                 distance = find()
@@ -283,7 +289,7 @@ def main():
     #===========================================================================
     say('Getting Camera')
     cap = cv2.VideoCapture(0)           # Creating Camera object
-    cam_width,cam_height = 960,720      # And setiing up it's
+    # cam_width,cam_height = 960,720      # And setiing up it's
     # cap.set(3,cam_width)                # Width and Height
     # cap.set(4,cam_height)               # According to ourself
     say('Camera connected')
@@ -304,7 +310,7 @@ def main():
             Hand_Detection_check = True
             scroll_dir = 0    
             #=============== Checking & Changing finger's State ===============
-            if finger_up_state:
+            if finger_up_state.size != 0 :
                 [Thumb,Index_Finger,Middle_Finger,Ring_Finger,Pinky_Finger] = finger_up_state
                 sum_of_finger_state = sum(finger_up_state[1:])
                 #==============================================================
@@ -352,7 +358,7 @@ def main():
                             else: click(pointer_x,pointer_y,button='right')
                     else:
                         #==== Mouse Click =====================================
-                        state = 'Mouse Pointer Clicked' if Mouse_clicked else 'Mouse Pointer Clickable'
+                        state = "Mouse Pointer Clicked" if Mouse_clicked else "Mouse Pointer Clickable"
                         if Clicked == 2: click(pointer_x,pointer_y)
                     #==========================================================
                 #==== Swipe Gesture & Mouse Control ===========================
