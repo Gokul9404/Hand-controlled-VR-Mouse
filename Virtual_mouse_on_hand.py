@@ -1,11 +1,9 @@
 #===== Importing Required Modules ==========================================
 from pyautogui import click, moveTo, size, hscroll
 import cv2
-import mediapipe as mp
 
 from win32com.client import Dispatch
 
-from math import hypot
 from numpy import interp
 from time import sleep, time
 
@@ -19,115 +17,11 @@ from webbrowser import open
 
 from os import startfile
 
+from Handcontroller import Hand_Controller
+
 from pygame import mixer
 mixer.init()
 #================================================================================
-class Handdetector:
-    def __init__(self,max_hands=1,detection_con=0.7,track_confidence=0.6):
-        """_summary_
-
-        Args:
-            max_hands (int):        Defaults to 1.
-                Represents the maximum no. of handes to detect in a frame at a time.
-            detection_con (float):  Defaults to 0.7.
-                Confidence in the detection of hande with-in the frame 
-            track_confidence (float):Defaults to 0.6.
-                Confidence of detecting the hand-movement between frame, i.e. Confidence to detecrmined the track change of hand.
-        """
-        mode = False
-        self.mpHands = mp.solutions.hands
-        self.hands = self.mpHands.Hands(mode,max_hands,1,detection_con,track_confidence)
-        self.mpdraw = mp.solutions.drawing_utils
-        
-        self.lm_list = []
-        self.fingerup_list = np.array([])
-        
-        self.tip_id = [4,8,12,16,20]
-        self.close_tip_id = [5,6,10,14,18]
-        self.hand_side = None
-
-    def findhand(self,img,draw=False,fliped_img=True):
-        #=== Getting the image in BGR format ====================================
-        #=== Then flipping the image for better understanding ===================
-        self.fliped_img = fliped_img
-        RGBimg = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
-        if self.fliped_img:
-            self.img = img  
-        else:
-            self.img =  cv2.flip(img,1)
-            RGBimg = cv2.flip(RGBimg,1)
-        #=== Processing the Hand position and ===================================
-        self.result = self.hands.process(RGBimg)
-        #=== Drawing the Landmarks of the Hand, if given draw ===================
-        if self.result.multi_hand_landmarks:        
-            for handlms in self.result.multi_hand_landmarks:
-                if draw:
-                    self.mpdraw.draw_landmarks(img,handlms,self.mpHands.HAND_CONNECTIONS)
-        return img
-    
-    def findPosition(self,handno=0):
-        lm_list = [ ]
-        if self.result.multi_hand_landmarks:    
-            given_hand = self.result.multi_hand_landmarks[handno]
-            for id, lm in enumerate(given_hand.landmark):
-                h ,w , _ = self.img.shape
-                cx, cy = int(lm.x*w),int(lm.y*h)
-                lm_list.append([id,cx,cy])
-        self.lm_list = lm_list
-        return self.lm_list
-
-    def fingersUp(self):
-        self.fingerup_list = np.array([])
-        if self.lm_list:
-            #==== Checking whther left hand or right hand =======================
-            #==== And then determining the Thumb state:- Open or Close ==========
-            if self.lm_list[0][1] > self.lm_list[1][1]:
-                self.hand_side = 'right'
-                if self.lm_list[self.tip_id[0]][1] < self.lm_list[self.close_tip_id[0]][1]  :
-                    self.fingerup_list = np.append(self.fingerup_list,[1])
-                else: 
-                    # self.fingerup_list.append(0)
-                    self.fingerup_list = np.append(self.fingerup_list,[0])
-            else :
-                self.hand_side = 'left'
-                if self.lm_list[self.tip_id[0]][1] > self.lm_list[self.close_tip_id[0]][1]  :
-                    self.fingerup_list = np.append(self.fingerup_list,[1])
-                else: 
-                    self.fingerup_list = np.append(self.fingerup_list,[0])
-            #==== Checking the state of the Fingers:- Open or Close =============
-            for id in range(1,5):
-                if self.lm_list[self.tip_id[id]][2] < self.lm_list[self.close_tip_id[id]][2]:
-                    self.fingerup_list =  np.append(self.fingerup_list,[1])
-                else: 
-                    self.fingerup_list = np.append(self.fingerup_list,[0])
-            #====================================================================
-        return self.fingerup_list
-    
-    def findDistance(self,img,F1,F2,draw_f=True,draw_line=True,draw_cntr=False,finger_up=True):
-        f1 = self.tip_id[F1]
-        f2 = self.tip_id[F2]
-        distance = 0
-        cx, cy = 0 ,0
-        def find():
-            f1_x,f1_y = self.lm_list[f1][1:]
-            f2_x,f2_y = self.lm_list[f2][1:]
-            cx,cy = (f1_x+f2_x)//2, (f1_y+f2_y)//2 
-            if draw_line:
-                cv2.line(img,(f1_x,f1_y),(f2_x,f2_y),(61,90,128),4)
-            if draw_f:
-                cv2.circle(img,(f1_x,f1_y),10,(0,29,62),cv2.FILLED)
-                cv2.circle(img,(f1_x,f1_y),7,(0,53,102),cv2.FILLED)
-                cv2.circle(img,(f2_x,f2_y),10,(0,29,62),cv2.FILLED)
-                cv2.circle(img,(f2_x,f2_y),7,(0,53,102),cv2.FILLED)
-            if draw_cntr:
-                cv2.circle(img,(cx,cy),8,(224,251,252),cv2.FILLED)
-            dis = hypot(f2_x - f1_x,f2_y - f1_y)
-            return dis, (cx, cy)
-        if self.lm_list and (self.fingerup_list.size != 0):
-            if finger_up and ((self.fingerup_list[F1] == self.fingerup_list[F2] == 1)): distance, (cx, cy) = find()
-            else:
-                distance = find()
-            return [distance , (cx, cy)]
 #=============== Machine Voice ==================================================
 voice_engine = Dispatch('SAPI.Spvoice')
 
@@ -252,7 +146,7 @@ def main():
         return Clicked, Mouse_state, Clicked
     #===========================================================================
     say('Getting Hand dectector module')
-    Hand_detector = Handdetector()      # Creating hand-Detector 
+    Hand_detector = Hand_Controller()      # Creating hand-Detector 
     #===========================================================================
     devices = AudioUtilities.GetSpeakers()
     interface = devices.Activate( IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
